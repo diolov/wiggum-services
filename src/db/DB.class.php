@@ -3,21 +3,28 @@ namespace wiggum\services\db;
 
 use \PDO;
 use \PDOException;
+use \wiggum\services\db\grammers\MySqlGrammar;
 
 class DB {
 	
 	private $pdo;
 	private $transactionError = false;
+	private $prefix = '';
 	
 	/**
 	 * 
 	 * @param array $config
 	 */
 	public function __construct($config) {
-		$port = isset($config['port']) ? $config['port'] : '3306';
-		$characterSet = isset($config['characterSet']) ? $config['characterSet'] : 'utf8';
+	    
+	    if (!empty($config)) {
+			$this->prefix = isset($config['prefix']) ? $config['prefix'] : '';
 
-		$this->connect($config['protocol'], $config['username'], $config['password'], $config['url'], $config['name'], $port, $characterSet);
+	        $port = isset($config['port']) ? $config['port'] : '3306';
+	        $characterSet = isset($config['characterSet']) ? $config['characterSet'] : 'utf8';
+	        
+	        $this->connect($config['protocol'], $config['username'], $config['password'], $config['url'], $config['name'], $port, $characterSet);
+	    }
 	}
 	
 	/**
@@ -34,9 +41,9 @@ class DB {
 	 * @return \wiggum\services\db\Builder
 	 */
 	public function table($table) {
-		$query = new Builder($this, new Grammar());
+		$query = new Builder($this, new MySqlGrammar());
 		
-		return $query->from($table);
+		return $query->from($this->prefix.$table);
 	}
 	
 	/**
@@ -54,7 +61,7 @@ class DB {
 	public function connect($protocol, $user, $password, $url, $name, $port = 3306, $characterSet = 'utf8') {
 		$pdo = null;
 		try {
-			$options = array(PDO::ATTR_PERSISTENT => true);
+			$options = [PDO::ATTR_PERSISTENT => true];
 			$pdo = new PDO("{$protocol}:host={$url};port={$port};dbname={$name}", $user, $password, $options);
 			$pdo->exec('SET NAMES '.$characterSet);
 		} catch (PDOException $e) {
@@ -131,7 +138,16 @@ class DB {
 		try {
 			$statement = $this->pdo->prepare($query);
 			$statement->setFetchMode($fetchMode, $instance);
-			if ($statement->execute($values)) {
+
+			foreach ($values as $key => &$val) {
+			    if (is_int($val)) {
+			        $statement->bindParam($key+1, $val, PDO::PARAM_INT);
+			    } else {
+			        $statement->bindParam($key+1, $val);
+			    }
+			}
+
+			if ($statement->execute()) {
 				$obj = $statement->fetch($fetchMode);
 				if (!$obj) return null;
 			} else {
@@ -160,7 +176,16 @@ class DB {
 		try {
 			$statement = $this->pdo->prepare($query);
 			$statement->setFetchMode($fetchMode, $instance);
-			if ($statement->execute($values)) {
+
+			foreach ($values as $key => &$val) {
+			    if (is_int($val)) {
+			        $statement->bindParam($key+1, $val, PDO::PARAM_INT);
+			    } else {
+			        $statement->bindParam($key+1, $val);
+			    }
+			}
+
+			if ($statement->execute()) {
 				while (($obj = $statement->fetch($fetchMode))) {
 					if (isset($obj))
 						$objects[] = clone $obj;
@@ -187,7 +212,16 @@ class DB {
 		$row = null;
 		try {
 			$statement = $this->pdo->prepare($query);
-			if ($statement->execute($values)) {
+			
+			foreach ($values as $key => &$val) {
+			    if (is_int($val)) {
+			        $statement->bindParam($key+1, $val, PDO::PARAM_INT);
+			    } else {
+			        $statement->bindParam($key+1, $val);
+			    }
+			}
+
+			if ($statement->execute()) {
 				$row = $statement->fetch($fetchMode);
 				if ($row === false) $row = null;
 			} else {
@@ -211,7 +245,16 @@ class DB {
 		$rows = array();
 		try {
 			$statement = $this->pdo->prepare($query);
-			if ($statement->execute($values)) {
+
+			foreach ($values as $key => &$val) {
+			    if (is_int($val)) {
+			        $statement->bindParam($key+1, $val, PDO::PARAM_INT);
+			    } else {
+			        $statement->bindParam($key+1, $val);
+			    }
+			}
+
+			if ($statement->execute()) {
 				$rows = $statement->fetchAll($fetchMode);
 			} else {
 				$errorInfo = $statement->errorInfo();
@@ -235,7 +278,16 @@ class DB {
 		$col = null;
 		try {
 			$statement = $this->pdo->prepare($query);
-			if ($statement->execute($values)) {
+
+			foreach ($values as $key => &$val) {
+			    if (is_int($val)) {
+			        $statement->bindParam($key+1, $val, PDO::PARAM_INT);
+			    } else {
+			        $statement->bindParam($key+1, $val);
+			    }
+			}
+
+			if ($statement->execute()) {
 				$col = $statement->fetchColumn();
 				if (!$col) return null;
 			} else {
@@ -259,7 +311,16 @@ class DB {
 		$result = false;
 		try {
 			$statement = $this->pdo->prepare($query);
-			if ($statement->execute($values)) {
+
+			foreach ($values as $key => &$val) {
+			    if (is_int($val)) {
+			        $statement->bindParam($key+1, $val, PDO::PARAM_INT);
+			    } else {
+			        $statement->bindParam($key+1, $val);
+			    }
+			}
+			
+			if ($statement->execute()) {
 				if ($lastInsId) {
 					$result = $this->pdo->lastInsertId();
 				} else {
@@ -279,4 +340,3 @@ class DB {
 	
 	
 }
-?>
